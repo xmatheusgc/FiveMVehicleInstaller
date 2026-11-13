@@ -1,0 +1,127 @@
+<Window x:Class="FiveMVehicleInstaller.App.MainWindow"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ Title="Vehicle Installer" Width="1420" Height="900" MinWidth="1120" MinHeight="760"
+ Background="#F5F6F8" Foreground="#252C35" FontFamily="{DynamicResource AppFont}" FontSize="13"
+ TextOptions.TextFormattingMode="Display" TextOptions.TextRenderingMode="ClearType" UseLayoutRounding="True"
+ WindowStartupLocation="CenterScreen" AllowDrop="True" Drop="OnDrop" DragOver="OnDragOver" Closing="OnClosing">
+ <Window.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><ResourceDictionary Source="WorkspaceTheme.xaml"/></ResourceDictionary.MergedDictionaries></ResourceDictionary></Window.Resources>
+ <Window.InputBindings><KeyBinding Key="O" Modifiers="Control" Command="{Binding AddFilesCommand}"/><KeyBinding Key="F5" Command="{Binding AnalyzeCommand}"/></Window.InputBindings>
+ <Grid>
+  <Grid Margin="20,18,20,12">
+   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+   <Grid Margin="0,0,0,14"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <StackPanel Orientation="Horizontal" VerticalAlignment="Center"><TextBlock Text="Vehicle Installer" FontSize="23" FontWeight="Medium"/><Border Width="1" Height="22" Background="#CCD2D9" Margin="20,0"/><TextBlock Text="{Binding CollectionSummary}" Style="{StaticResource Caption}" VerticalAlignment="Center"/></StackPanel>
+    <StackPanel Grid.Column="1" Orientation="Horizontal"><Button Content="Abrir pack" Command="{Binding OpenPackCommand}" ToolTip="Editar um pack criado por este aplicativo" Margin="0,0,8,0"/><Button Content="Adicionar arquivos" Command="{Binding AddFilesCommand}" ToolTip="Selecionar ZIP, RAR, 7z ou RPF (Ctrl+O)" Margin="0,0,8,0"/><Button Content="Adicionar pasta" Command="{Binding AddFolderCommand}" Margin="0,0,8,0"/><Button Content="Analisar" Command="{Binding AnalyzeCommand}" Style="{StaticResource PrimaryButton}" ToolTip="Analisar as entradas (F5)" MinWidth="96"/></StackPanel>
+   </Grid>
+   <Grid Grid.Row="1" Margin="0,0,0,14"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <Expander Header="{Binding InputSummary}" FontSize="12" Foreground="{StaticResource Muted}" IsEnabled="{Binding CanRun}">
+     <ScrollViewer MaxHeight="92" VerticalScrollBarVisibility="Auto" Margin="0,8,12,0"><ItemsControl ItemsSource="{Binding Inputs}"><ItemsControl.ItemTemplate><DataTemplate><Grid Margin="0,2"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="{Binding}" Style="{StaticResource Caption}" TextTrimming="CharacterEllipsis" ToolTip="{Binding}" VerticalAlignment="Center"/><Button Grid.Column="1" Content="Remover" Style="{StaticResource QuietButton}" Command="{Binding DataContext.RemoveInputCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"/></Grid></DataTemplate></ItemsControl.ItemTemplate></ItemsControl></ScrollViewer>
+    </Expander>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Visibility="{Binding IsEditingPack, Converter={StaticResource VisibleWhenTrue}}" Margin="12,0,0,0"><TextBlock Text="{Binding EditingPackLabel}" MaxWidth="330" TextTrimming="CharacterEllipsis" ToolTip="{Binding EditingPackLabel}" Style="{StaticResource Caption}" VerticalAlignment="Center"/><Button Content="Salvar como novo" Command="{Binding SaveAsNewPackCommand}" Style="{StaticResource QuietButton}" Margin="8,0,0,0"/></StackPanel>
+   </Grid>
+   <Grid Grid.Row="2" Visibility="{Binding HasPackages, Converter={StaticResource VisibleWhenTrue}}"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><Expander Header="{Binding PackValidationSummary}" Visibility="{Binding HasPackages, Converter={StaticResource VisibleWhenTrue}}" IsExpanded="{Binding HasPackConflicts, Mode=OneWay}" Margin="0,0,0,10" FontSize="12">
+    <Expander.Style><Style TargetType="Expander"><Setter Property="Foreground" Value="#317453"/><Style.Triggers><DataTrigger Binding="{Binding HasPackConflicts}" Value="True"><Setter Property="Foreground" Value="#B23B42"/></DataTrigger><DataTrigger Binding="{Binding IsCheckingPack}" Value="True"><Setter Property="Foreground" Value="#5C6878"/></DataTrigger></Style.Triggers></Style></Expander.Style>
+    <ScrollViewer MaxHeight="76" VerticalScrollBarVisibility="Auto" Margin="20,6,0,0"><ItemsControl ItemsSource="{Binding PackValidationIssues}"><ItemsControl.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,2"/></DataTemplate></ItemsControl.ItemTemplate></ItemsControl></ScrollViewer>
+   </Expander><Button Grid.Column="1" Content="Verificar" Command="{Binding RecheckPackCommand}" Style="{StaticResource QuietButton}" VerticalAlignment="Top" Margin="8,-3,0,0"/></Grid>
+   <Grid Grid.Row="3"><Grid.ColumnDefinitions><ColumnDefinition Width="*" MinWidth="620"/><ColumnDefinition Width="12"/><ColumnDefinition Width="360" MinWidth="340" MaxWidth="520"/></Grid.ColumnDefinitions>
+    <Border Style="{StaticResource Card}"><Grid>
+     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+     <Grid Margin="14,12"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+      <TextBlock Text="Pacotes" Style="{StaticResource SectionTitle}" VerticalAlignment="Center"/>
+      <DockPanel Grid.Column="1"><TextBlock Text="Buscar" Style="{StaticResource Caption}" Margin="0,0,8,0" VerticalAlignment="Center"/><TextBox Width="230" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" ToolTip="Buscar por nome do pacote ou modelo" IsEnabled="{Binding CanRun}"/></DockPanel>
+     </Grid>
+     <DataGrid x:Name="PackagesTable" Grid.Row="1" ItemsSource="{Binding PackagesView}" SelectedItem="{Binding SelectedPackage, Mode=TwoWay}"
+      AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Extended" SelectionChanged="OnPackageSelectionChanged" SelectionUnit="FullRow" IsEnabled="{Binding CanRun}" CanUserReorderColumns="True"
+      CanUserResizeColumns="True" CanUserSortColumns="True" FrozenColumnCount="2" Margin="0" ClipboardCopyMode="ExcludeHeader">
+      <DataGrid.Columns>
+       <DataGridTemplateColumn Header="Selecionar" Width="38" CanUserSort="False" CanUserResize="False">
+        <DataGridTemplateColumn.HeaderTemplate><DataTemplate><CheckBox IsChecked="{Binding DataContext.TableSelection, RelativeSource={RelativeSource AncestorType=DataGrid}, Mode=TwoWay}" IsThreeState="True" ToolTip="Marcar ou desmarcar todos os pacotes disponíveis" HorizontalAlignment="Center"/></DataTemplate></DataGridTemplateColumn.HeaderTemplate>
+        <DataGridTemplateColumn.CellTemplate><DataTemplate><CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding Package.CanExport}" HorizontalAlignment="Center" VerticalAlignment="Center" ToolTip="{Binding SelectionHint}" ToolTipService.ShowOnDisabled="True"/></DataTemplate></DataGridTemplateColumn.CellTemplate>
+       </DataGridTemplateColumn>
+       <DataGridTemplateColumn Header="Pacote" Width="2*" MinWidth="140" SortMemberPath="ResourceName"><DataGridTemplateColumn.CellTemplate><DataTemplate><StackPanel VerticalAlignment="Center"><TextBlock Text="{Binding ResourceName}" Style="{StaticResource CellText}" FontWeight="Medium" ToolTip="{Binding Package.SourceName}"/><TextBlock Text="{Binding SourceKind}" FontSize="10" Foreground="{StaticResource Muted}" Margin="0,2,0,0"/></StackPanel></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+       <DataGridTemplateColumn Header="Modelos" Width="*" MinWidth="75" SortMemberPath="ModelNames"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding ModelNames}" Style="{StaticResource CellText}" ToolTip="{Binding ModelNames}"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+       <DataGridTextColumn Header="Arq." Binding="{Binding FileCount}" SortMemberPath="FileCount" Width="48" ElementStyle="{StaticResource CellText}"/>
+       <DataGridTextColumn Header="Tamanho" Binding="{Binding SizeLabel}" SortMemberPath="TotalBytes" Width="78" ElementStyle="{StaticResource CellText}"/>
+       <DataGridTemplateColumn Header="Destino" Width="*" MinWidth="90" SortMemberPath="DestinationDirectory"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding DestinationLabel}" Style="{StaticResource CellText}" Foreground="{StaticResource Muted}" ToolTip="{Binding DestinationLabel}"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+       <DataGridTemplateColumn Header="Estado" Width="106" SortMemberPath="State"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding State}" TextTrimming="CharacterEllipsis" ToolTip="{Binding SelectionHint}"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="#317453"/><Style.Triggers><DataTrigger Binding="{Binding HasErrors}" Value="True"><Setter Property="Foreground" Value="#B23B42"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+      </DataGrid.Columns>
+     </DataGrid>
+     <StackPanel Grid.Row="1" Visibility="{Binding NoPackages, Converter={StaticResource VisibleWhenTrue}}" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24"><TextBlock Text="Nenhum pacote analisado" FontWeight="Medium" FontSize="15" TextAlignment="Center"/><TextBlock Text="Adicione arquivos ou uma pasta e clique em Analisar." Style="{StaticResource Caption}" TextAlignment="Center" TextWrapping="Wrap" Margin="0,8,0,0"/></StackPanel>
+     <Border Grid.Row="2" BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="12,6"><StackPanel><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="{Binding SelectionSummary}" Style="{StaticResource Caption}" FontSize="11" VerticalAlignment="Center"/><StackPanel Grid.Column="1" Orientation="Horizontal"><Button Content="Todos" Command="{Binding SelectAllCommand}" Style="{StaticResource QuietButton}"/><Button Content="Nenhum" Command="{Binding SelectNoneCommand}" Style="{StaticResource QuietButton}"/><Border Width="1" Height="16" Background="{StaticResource Line}" Margin="8,0"/><Button Content="Limpar coleção" Command="{Binding ClearCommand}" Style="{StaticResource QuietButton}"/></StackPanel></Grid>
+      <StackPanel Visibility="{Binding HasMultipleHighlighted, Converter={StaticResource VisibleWhenTrue}}" Margin="0,8,0,4" IsEnabled="{Binding CanRun}">
+       <TextBlock Text="{Binding HighlightedSummary}" Style="{StaticResource Caption}" FontSize="11" Margin="0,0,0,6"/>
+       <WrapPanel><TextBox Width="110" Text="{Binding BulkAudioName, UpdateSourceTrigger=PropertyChanged}" ToolTip="Som para todos os veículos dos pacotes destacados" Margin="0,0,6,4"/><Button Content="Aplicar som" Command="{Binding ApplyBulkSoundCommand}" Margin="0,0,6,4"/><Button Content="Restaurar sons" Command="{Binding RestoreBulkSoundCommand}" Margin="0,0,6,4"/><Button Content="Destino" Command="{Binding PickBulkDestinationCommand}" Margin="0,0,6,4"/><Button Content="Incluir" Command="{Binding IncludeHighlightedCommand}" Margin="0,0,6,4"/><Button Content="Excluir da saída" Command="{Binding ExcludeHighlightedCommand}" Margin="0,0,0,4"/></WrapPanel>
+       <TextBlock Text="{Binding BulkFeedback}" Style="{StaticResource Caption}" FontSize="11" TextWrapping="Wrap"/>
+      </StackPanel>
+     </StackPanel></Border>
+    </Grid></Border>
+    <GridSplitter Grid.Column="1" Width="6" HorizontalAlignment="Center" VerticalAlignment="Stretch" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Background="Transparent" ToolTip="Arraste para ajustar a largura dos detalhes"/>
+    <Border Grid.Column="2" Style="{StaticResource Card}" Padding="16"><Grid>
+     <Grid Visibility="{Binding HasSelectedPackage, Converter={StaticResource VisibleWhenTrue}}"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+      <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="Detalhes do pacote" Style="{StaticResource SectionTitle}"/><TextBlock Grid.Column="1" Text="{Binding SelectedPackage.State}" FontSize="11" VerticalAlignment="Center"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="#317453"/><Style.Triggers><DataTrigger Binding="{Binding SelectedPackage.HasErrors}" Value="True"><Setter Property="Foreground" Value="#B23B42"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></Grid>
+      <ScrollViewer Grid.Row="1" Margin="0,16,0,8" MaxHeight="230" VerticalScrollBarVisibility="Auto"><StackPanel IsEnabled="{Binding CanRun}">
+       <Border Visibility="{Binding SelectedPackage.HasImportErrors, Converter={StaticResource VisibleWhenTrue}}" Background="#FFF0F0" CornerRadius="4" Padding="10" Margin="0,0,0,12">
+        <StackPanel><TextBlock Text="Exportação bloqueada" Foreground="#B23B42" FontWeight="Medium"/>
+         <ScrollViewer MaxHeight="95" VerticalScrollBarVisibility="Auto"><TextBlock Text="{Binding SelectedPackage.BlockReason}" Foreground="#8B343A" FontSize="11" TextWrapping="Wrap" Margin="0,5,0,0"/></ScrollViewer>
+         <StackPanel Visibility="{Binding SelectedPackage.CanRepair, Converter={StaticResource VisibleWhenTrue}}" Margin="0,8,0,0">
+          <TextBlock Text="{Binding SelectedPackage.RepairDescription}" TextWrapping="Wrap" FontSize="11" Foreground="#8B343A"/>
+          <Button Content="Aplicar esta correção na cópia" Command="{Binding ApproveRepairCommand}" CommandParameter="{Binding SelectedPackage}" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+         </StackPanel>
+        </StackPanel>
+       </Border>
+       <TextBlock Text="Nome do resource" Style="{StaticResource Caption}" Margin="0,0,0,5"/>
+       <TextBox Text="{Binding SelectedPackage.ResourceName, UpdateSourceTrigger=PropertyChanged}" ToolTip="Maiúsculas viram minúsculas; espaços viram _. O nome final aparece abaixo."/>
+       <TextBlock Text="{Binding SelectedPackage.ResourceNameFeedback}" FontSize="11" Margin="0,5,0,0" TextTrimming="CharacterEllipsis" ToolTip="{Binding SelectedPackage.ResourceNameFeedback}"><TextBlock.Style><Style TargetType="TextBlock" BasedOn="{StaticResource Caption}"><Style.Triggers><DataTrigger Binding="{Binding SelectedPackage.HasNameError}" Value="True"><Setter Property="Foreground" Value="#B23B42"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
+       <Expander Header="Origem do pacote" FontSize="11" Foreground="{StaticResource Muted}" Margin="0,8,0,0"><TextBlock Text="{Binding SelectedPackage.Package.SourceName}" Style="{StaticResource Caption}" TextWrapping="Wrap" FontSize="11" Margin="0,6"/></Expander>
+       <TextBlock Text="Autoria encontrada" Style="{StaticResource Caption}" Margin="0,10,0,3"/>
+       <TextBlock x:Name="CreatorSummaryText" Text="{Binding SelectedPackage.CreatorSummary}" FontSize="12" TextWrapping="Wrap" ToolTip="{Binding SelectedPackage.CreditDetails}"/>
+       <StackPanel Visibility="{Binding ExportSeparately, Converter={StaticResource VisibleWhenTrue}}" Margin="0,14,0,0">
+        <TextBlock Text="Destino deste pacote" Style="{StaticResource Caption}" Margin="0,0,0,5"/>
+        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBox Text="{Binding SelectedPackage.DestinationDirectory, UpdateSourceTrigger=PropertyChanged}" ToolTip="Destino individual. Vazio usa a pasta padrão da exportação."/><Button Grid.Column="1" Content="Escolher" Command="{Binding PickPackageDestinationCommand}" CommandParameter="{Binding SelectedPackage}" Margin="6,0,0,0"/></Grid>
+        <Button Content="Usar pasta padrão" Style="{StaticResource QuietButton}" HorizontalAlignment="Left" Command="{Binding UseDefaultDestinationCommand}" CommandParameter="{Binding SelectedPackage}" Margin="-8,3,0,0"/>
+       </StackPanel>
+      </StackPanel></ScrollViewer>
+      <TabControl Grid.Row="2">
+       <TabItem Header="Veículos"><DockPanel><TextBlock DockPanel.Dock="Top" Text="Som do motor" Style="{StaticResource Caption}" Margin="0,0,0,12"/>
+        <ScrollViewer VerticalScrollBarVisibility="Auto"><ItemsControl ItemsSource="{Binding SelectedPackage.Vehicles}" IsEnabled="{Binding CanRun}"><ItemsControl.ItemTemplate><DataTemplate>
+         <Border BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1" Padding="0,0,0,12" Margin="0,0,0,14"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/></Grid.ColumnDefinitions>
+          <StackPanel VerticalAlignment="Top" Margin="0,6,10,0"><TextBlock Text="{Binding ModelName}" FontSize="14" FontWeight="Medium" TextTrimming="CharacterEllipsis" ToolTip="{Binding ModelName}"/><TextBlock Text="{Binding OriginalAudio, StringFormat='Original: {0}'}" Style="{StaticResource Caption}" FontSize="11" Margin="0,5,0,0" TextTrimming="CharacterEllipsis" ToolTip="{Binding OriginalAudio}"/></StackPanel>
+          <StackPanel Grid.Column="1"><TextBox Text="{Binding AudioNameHash, UpdateSourceTrigger=PropertyChanged}" ToolTip="audioNameHash: som existente no GTA ou no servidor"/><Button Content="Restaurar original" Style="{StaticResource QuietButton}" HorizontalAlignment="Right" Command="{Binding DataContext.ResetSoundCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" Margin="0,4,-8,0"/></StackPanel>
+         </Grid></Border>
+        </DataTemplate></ItemsControl.ItemTemplate></ItemsControl></ScrollViewer>
+       </DockPanel></TabItem>
+       <TabItem Header="Arquivos"><ListBox ItemsSource="{Binding SelectedPackage.FilePaths}" FontSize="11"><ListBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis" ToolTip="{Binding}"/></DataTemplate></ListBox.ItemTemplate></ListBox></TabItem>
+       <TabItem x:Name="CreditsTab" Header="Créditos"><ScrollViewer VerticalScrollBarVisibility="Auto"><TextBlock Text="{Binding SelectedPackage.CreditDetails}" FontSize="12" TextWrapping="Wrap"/></ScrollViewer></TabItem>
+       <TabItem Header="Avisos"><ListBox ItemsSource="{Binding SelectedPackage.Diagnostics}" FontSize="12"><ListBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" TextWrapping="Wrap"/></DataTemplate></ListBox.ItemTemplate></ListBox></TabItem>
+      </TabControl>
+     </Grid>
+     <StackPanel Visibility="{Binding NoSelectedPackage, Converter={StaticResource VisibleWhenTrue}}" VerticalAlignment="Center" Margin="8"><TextBlock Text="Detalhes do pacote" FontSize="16" FontWeight="Medium"/><TextBlock Text="Selecione uma linha da tabela para revisar arquivos, editar o som e escolher o destino." Style="{StaticResource Caption}" TextWrapping="Wrap" LineHeight="19" Margin="0,10,0,0"/></StackPanel>
+    </Grid></Border>
+   </Grid>
+   <Border Grid.Row="4" Style="{StaticResource Card}" Padding="16,12" Margin="0,14,0,10"><Grid IsEnabled="{Binding CanRun}"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <Grid Margin="0,0,0,12"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+     <StackPanel Orientation="Horizontal"><TextBlock Text="Exportação" FontWeight="Medium" FontSize="15" VerticalAlignment="Center" Margin="0,0,20,0"/><RadioButton GroupName="ExportMode" Content="Separados" Style="{StaticResource ModeOption}" IsChecked="{Binding ExportSeparately, Mode=TwoWay}"/><RadioButton GroupName="ExportMode" Content="Pack unificado" Style="{StaticResource ModeOption}" IsChecked="{Binding ExportAsPack, Mode=TwoWay}"/></StackPanel>
+     <StackPanel Grid.Column="1" Orientation="Horizontal" Visibility="{Binding ExportAsPack, Converter={StaticResource VisibleWhenTrue}}"><TextBlock Text="Nome do pack" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,8,0"/><TextBox Width="200" IsEnabled="{Binding CanChangePackTarget}" Text="{Binding PackResourceName, UpdateSourceTrigger=PropertyChanged}" ToolTip="Nome do resource unificado. O nome final é mostrado abaixo."/></StackPanel>
+    </Grid>
+    <Grid Grid.Row="1"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+     <TextBlock Text="Pasta padrão" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,12,0"/><TextBox Grid.Column="1" IsReadOnly="{Binding IsEditingPack}" Text="{Binding DestinationDirectory, UpdateSourceTrigger=PropertyChanged}" ToolTip="Pasta padrão de saída. No modo separado, destinos individuais têm preferência."/>
+     <Button Grid.Column="2" Content="Escolher pasta" IsEnabled="{Binding CanChangePackTarget}" Command="{Binding PickDestinationCommand}" Margin="8,0,16,0"/><Button Grid.Column="3" Content="{Binding ExportLabel}" Command="{Binding ExportCommand}" Style="{StaticResource PrimaryButton}" MinWidth="172"/>
+    </Grid>
+    <TextBlock Grid.Row="2" Text="{Binding ExportHint}" FontSize="11" TextWrapping="Wrap" Margin="0,10,0,0"><TextBlock.Style><Style TargetType="TextBlock" BasedOn="{StaticResource Caption}"><Style.Triggers><DataTrigger Binding="{Binding HasExportNameError}" Value="True"><Setter Property="Foreground" Value="#B23B42"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
+   </Grid></Border>
+   <Grid Grid.Row="5"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <TextBlock Text="{Binding Status}" Style="{StaticResource Caption}" FontSize="11" TextTrimming="CharacterEllipsis" ToolTip="{Binding Status}" VerticalAlignment="Center"/>
+    <Button Grid.Column="1" Content="Atividade" Command="{Binding ToggleActivityCommand}" Style="{StaticResource QuietButton}" Margin="16,0,0,0"/><Button Grid.Column="2" Content="Cancelar" Command="{Binding CancelCommand}" Style="{StaticResource QuietButton}" Margin="8,0,0,0"/>
+    <ProgressBar Grid.Row="1" Grid.ColumnSpan="3" Height="2" Margin="0,5,0,0" Maximum="100" Value="{Binding ProgressValue}" IsIndeterminate="{Binding IsIndeterminate}" Foreground="{StaticResource Accent}" Background="#E3E7EC" BorderThickness="0"/>
+   </Grid>
+  </Grid>
+  <Grid Background="#77313B48" Visibility="{Binding ShowActivity, Converter={StaticResource VisibleWhenTrue}}">
+   <Border Style="{StaticResource Card}" Margin="32" Padding="24" MaxWidth="840" MaxHeight="620" VerticalAlignment="Center"><Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="Atividade" FontSize="20" FontWeight="Medium"/><Button Grid.Column="1" Content="Fechar" Command="{Binding ToggleActivityCommand}" Style="{StaticResource QuietButton}"/></Grid>
+    <TextBlock Grid.Row="1" Text="Resultados da análise e da exportação" Style="{StaticResource Caption}" Margin="0,6,0,18"/>
+    <ListBox Grid.Row="2" ItemsSource="{Binding Messages}" MinHeight="160" FontSize="12"><ListBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" TextWrapping="Wrap"/></DataTemplate></ListBox.ItemTemplate></ListBox>
+    <Button Grid.Row="3" Content="Copiar último ensure" Command="{Binding CopyEnsureCommand}" HorizontalAlignment="Left" Margin="0,16,0,0"/>
+   </Grid></Border>
+  </Grid>
+ </Grid>
+</Window>

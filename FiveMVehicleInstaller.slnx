@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FiveMVehicleInstaller.App/FiveMVehicleInstaller.App.csproj" />
+    <Project Path="src/FiveMVehicleInstaller.Core/FiveMVehicleInstaller.Core.csproj" />
+    <Project Path="src/FiveMVehicleInstaller.Infrastructure/FiveMVehicleInstaller.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FiveMVehicleInstaller.Tests/FiveMVehicleInstaller.Tests.csproj" />
+  </Folder>
+</Solution>
